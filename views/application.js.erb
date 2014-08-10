@@ -1,0 +1,42 @@
+var channel  = 'default';
+var es;
+
+function createEventSource() {
+  if (es != null) {
+    es.close();
+  }
+
+  es = new EventSource('/sse/' + channel);
+
+  es.onmessage = function(message) {
+    var data = JSON.parse(message.data);
+    $("#chat-text").append("<div class='panel panel-default'><div class='panel-heading'>" + data.handle + "</div><div class='panel-body'>" + data.text + "</div></div>");
+    $("#chat-text").stop().animate({
+      scrollTop: $('#chat-text')[0].scrollHeight
+    }, 800);
+  };
+}
+
+$("#channel-form").on("submit", function(event) {
+  event.preventDefault();
+  channel = $("#input-channel").val();
+  $("#chat-text").append("<div class='panel panel-default'><div class='panel-body'>changed channel to: " + channel + "</div></div>");
+  createEventSource();
+  $("#input-channel").blur();
+});
+
+$("#input-form").on("submit", function(event) {
+  event.preventDefault();
+  var handle = $("#input-handle").val();
+  var text   = $("#input-text").val();
+  $.ajax({
+    url: '/' + channel,
+    type: 'POST',
+    data: JSON.stringify({ msg: { handle: handle, text: text }}),
+    dataType: 'json',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  $("#input-text").val('');
+});
+
+createEventSource();
