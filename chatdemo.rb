@@ -41,7 +41,7 @@ module ChatDemo
     #
     post '/:channel' do
       content_type :json
-      Redis.with {|r| r.publish Redis::CHANNEL_KEY % @channel, params[:msg].to_json}
+      Redis.with {|r| r.publish Redis::CHANNEL_KEY % @channel, sanitize(params[:msg].to_json)}
       PUBLISHED
     end
 
@@ -97,6 +97,14 @@ module ChatDemo
       # unflag this channel as subscribed before ending the task
       #
       @@subscriptions.delete channel
+    end
+
+    private
+
+    def sanitize(message)
+      json = JSON.parse(message)
+      json.each {|key, value| json[key] = ERB::Util.html_escape(value) }
+      JSON.generate(json)
     end
 
   end
